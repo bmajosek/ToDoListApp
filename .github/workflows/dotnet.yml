@@ -24,3 +24,5 @@ jobs:
       run: dotnet restore ToDoList
     - name: Build
       run: dotnet build --no-restore ToDoList
+    - name: Tests
+      run: dotnet test --verbosity normal
