@@ -1,4 +1,4 @@
-﻿namespace ToDoList.Model
+﻿namespace ToDoList.Class.DTO
 {
     public class AuthResult
     {

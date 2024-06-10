@@ -1,4 +1,4 @@
-﻿using ToDoList.Model;
+﻿using ToDoList.Class.DTO;
 
 namespace ToDoList.Interface;
 

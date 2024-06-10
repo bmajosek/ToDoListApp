@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using ToDoList.Model;
 using ToDoList.Interface;
+using ToDoList.Class.DTO;
 
 namespace ToDoList.Controllers
 {

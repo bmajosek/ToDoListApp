@@ -1,10 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
-using ToDoList.Model;
 using ToDoList.Services;
 using ToDoList.Interface;
 using ToDoList.Services.Interfaces;
+using ToDoList.Class.DTO;
 
 namespace ToDoList.Controllers
 {
@@ -64,7 +64,7 @@ namespace ToDoList.Controllers
         }
 
         [HttpPatch, Authorize]
-        public async Task<IActionResult> Update([FromBody] TaskToPatch taskToDo)
+        public async Task<IActionResult> Update([FromBody] TaskToPatchDTO taskToDo)
         {
             var task = await _tasksRepository.GetByTaskId(taskToDo.Id);
             if (task == null)

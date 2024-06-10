@@ -1,6 +1,6 @@
-﻿namespace ToDoList.Model
+﻿namespace ToDoList.Class.DTO
 {
-    public class TaskToDoReadDTO
+    public class TaskToPatchDTO
     {
         public int Id { get; set; }
         public string Description { get; set; }
