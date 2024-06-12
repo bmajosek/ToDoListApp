@@ -413,10 +413,10 @@ Outputs:
     Description: Public subnet B
     Value: !Ref PublicSubnetB
   PrivateSubnetA:
-    Description: Private subnet one
+    Description: Private subnet A
     Value: !Ref PrivateSubnetA
   PrivateSubnetB:
-    Description: Private subnet two
+    Description: Private subnet B
     Value: !Ref PrivateSubnetB
   ExternalUrl:
     Description: The url of the external load balancer
