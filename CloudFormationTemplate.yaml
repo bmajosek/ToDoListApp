@@ -216,9 +216,7 @@ Resources:
         - !Ref PublicSubnetB
       SecurityGroups:
         - !Ref PublicLoadBalancerSG
-  # A dummy target group is used to setup the ALB to just drop traffic
-  # initially, before any real service target groups have been added.
-  DummyTargetGroupPublic:
+  TargetGroupPublic:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     DependsOn: PublicLoadBalancer
     Properties:
@@ -231,7 +229,7 @@ Resources:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
       DefaultActions:
-        - TargetGroupArn: !Ref DummyTargetGroupPublic
+        - TargetGroupArn: !Ref TargetGroupPublic
           Type: forward
       LoadBalancerArn: !Ref PublicLoadBalancer
       Port: 80
@@ -267,7 +265,7 @@ Resources:
           SecurityGroups:
             - !Ref ContainerSG
       LoadBalancers:
-        - TargetGroupArn: !Ref DummyTargetGroupPublic
+        - TargetGroupArn: !Ref TargetGroupPublic
           ContainerName: todolist
           ContainerPort: 80
   # Task
