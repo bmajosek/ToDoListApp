@@ -70,9 +70,7 @@ namespace ToDoList.Controllers
             if (task == null)
                 return BadRequest("the task has not been found");
 
-            task.Description = taskToDo.Description;
-            task.IsCompleted = taskToDo.IsCompleted;
-            await _tasksRepository.UpdateTask(task);
+            await _tasksRepository.UpdateTask(task, taskToDo);
             return Ok("the task has been updated");
         }
     }

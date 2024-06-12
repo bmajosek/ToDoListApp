@@ -20,9 +20,12 @@ public class TasksRepository : ITasksRepository
         _context = context;
     }
 
-    public async Task<List<TaskToDo>> GetTasksByUserId(string userId)
+    public async Task<List<TaskToDoReadDTO>> GetTasksByUserId(string userId)
     {
-        return await _context.TasksToDo.Where(t => t.UserId == userId).ToListAsync();
+        return await _context.TasksToDo
+            .Where(t => t.UserId == userId)
+            .Select(t => new TaskToDoReadDTO { Description = t.Description, Id = t.Id, IsCompleted = t.IsCompleted })
+            .ToListAsync();
     }
 
     public async Task<TaskToDo?> GetByTaskId(int taskId)
@@ -32,7 +35,7 @@ public class TasksRepository : ITasksRepository
 
     public async Task<List<TaskToDoReadDTO>> GetFamilyTasks(string userId)
     {
-        var user = await _context.Users.SingleAsync(u => u.Id == userId);
+        var user = await _context.Users.FirstAsync(u => u.Id == userId);
         return await _context.TasksToDo
             .Where(t => t.FamilyId == user.FamilyId)
             .Select(t => new TaskToDoReadDTO { Description = t.Description, Id = t.Id, IsCompleted = t.IsCompleted })
@@ -60,8 +63,10 @@ public class TasksRepository : ITasksRepository
         await _context.SaveChangesAsync();
     }
 
-    public async Task UpdateTask(TaskToDo task)
+    public async Task UpdateTask(TaskToDo task, TaskToPatchDTO taskToPatch)
     {
+        task.Description = taskToPatch.Description;
+        task.IsCompleted = taskToPatch.IsCompleted;
         _context.Update(task);
         await _context.SaveChangesAsync();
     }

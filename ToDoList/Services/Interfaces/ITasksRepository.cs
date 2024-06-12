@@ -7,7 +7,7 @@ namespace ToDoList.Interface;
 
 public interface ITasksRepository
 {
-    Task<List<TaskToDo>> GetTasksByUserId(string userId);
+    Task<List<TaskToDoReadDTO>> GetTasksByUserId(string userId);
 
     Task<List<TaskToDoReadDTO>> GetFamilyTasks(string userId);
 
@@ -17,5 +17,5 @@ public interface ITasksRepository
 
     Task DeleteTask(int taskId);
 
-    Task UpdateTask(TaskToDo task);
+    Task UpdateTask(TaskToDo task, TaskToPatchDTO taskToPatch);
 }

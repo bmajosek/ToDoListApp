@@ -8,6 +8,7 @@ using ToDoList.Data;
 using ToDoList.Model;
 using ToDoList.Services;
 using DocumentFormat.OpenXml.InkML;
+using ToDoList.Class.DTO;
 
 namespace ToDoListTests;
 
@@ -45,7 +46,7 @@ public class TasksRepositoryTests
 
         // Assert
         Assert.Equal(2, result.Count);
-        Assert.All(result, task => Assert.Equal("user1", task.UserId));
+        Assert.All(result, task => Assert.False(task.IsCompleted));
     }
 
     [Fact]
@@ -60,6 +61,39 @@ public class TasksRepositoryTests
         var task = await _tasksRepository.GetByTaskId(taskIdToDelete);
 
         // Assert
-        Assert.Null(task); // Task should no longer exist in the database
+        Assert.Null(task);
+    }
+
+    [Fact]
+    public async Task AddTask_AddsTaskSuccessfully()
+    {
+        // Arrange
+        _tasksRepository = new TasksRepository(_contextMock);
+        var newTask = new TaskToDoDTO { Description = "New Task" };
+
+        // Act
+        await _tasksRepository.AddTask(new ApiUser { Id = "user3", FamilyId = "family3" }, newTask);
+        var addedTask = await _tasksRepository.GetTasksByUserId("user3");
+
+        // Assert
+        Assert.Single(addedTask);
+        Assert.Equal("New Task", addedTask.First().Description);
+    }
+
+    [Fact]
+    public async Task UpdateTask_UpdatesTaskCorrectly()
+    {
+        // Arrange
+        _tasksRepository = new TasksRepository(_contextMock);
+        var taskToUpdate = await _contextMock.TasksToDo.FirstAsync(t => t.Id == 1);
+        var updatedInfo = new TaskToPatchDTO { Description = "Updated Task 1", IsCompleted = true };
+
+        // Act
+        await _tasksRepository.UpdateTask(taskToUpdate, updatedInfo);
+        var updatedTask = await _tasksRepository.GetByTaskId(1);
+
+        // Assert
+        Assert.Equal("Updated Task 1", updatedTask.Description);
+        Assert.True(updatedTask.IsCompleted);
     }
 }
