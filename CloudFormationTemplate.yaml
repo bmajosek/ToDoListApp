@@ -1,6 +1,8 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: AWS core resources to create an ECS cluster spanning public and
-  private subnets. Supports public facing load balancers.
+Description: AWS core resources to Grand Project
+
+######################################
+
 Parameters:
   DBInstanceClass:
     Description: The database instance type
@@ -20,9 +22,12 @@ Parameters:
     Description: The database password
     Type: String
 
-  TaskExecutionRoleArn:
-    Description: Arn of existing IAM role for ECS task execution
+  IAMRole:
+    Description: IAM role for ECS task execution (LabRole)
     Type: String
+
+######################################
+
 Mappings:
   SubnetConfig:
     VPC:
@@ -36,7 +41,11 @@ Mappings:
     PrivateTwo:
       CIDR: 10.0.3.0/24
 
+######################################
+
 Resources:
+
+  # VPC
   VPC:
     Type: AWS::EC2::VPC
     Properties:
@@ -44,7 +53,8 @@ Resources:
       EnableDnsHostnames: true
       CidrBlock: !FindInMap ['SubnetConfig', 'VPC', 'CIDR']
 
-  PublicSubnetOne:
+  # Subnets
+  PublicSubnetA:
     Type: AWS::EC2::Subnet
     Properties:
       AvailabilityZone: !Select
@@ -53,7 +63,7 @@ Resources:
       VpcId: !Ref 'VPC'
       CidrBlock: !FindInMap ['SubnetConfig', 'PublicOne', 'CIDR']
       MapPublicIpOnLaunch: true
-  PublicSubnetTwo:
+  PublicSubnetB:
     Type: AWS::EC2::Subnet
     Properties:
       AvailabilityZone: !Select
@@ -62,8 +72,7 @@ Resources:
       VpcId: !Ref 'VPC'
       CidrBlock: !FindInMap ['SubnetConfig', 'PublicTwo', 'CIDR']
       MapPublicIpOnLaunch: true
-
-  PrivateSubnetOne:
+  PrivateSubnetA:
     Type: AWS::EC2::Subnet
     Properties:
       AvailabilityZone: !Select
@@ -71,7 +80,7 @@ Resources:
         - Fn::GetAZs: !Ref 'AWS::Region'
       VpcId: !Ref 'VPC'
       CidrBlock: !FindInMap ['SubnetConfig', 'PrivateOne', 'CIDR']
-  PrivateSubnetTwo:
+  PrivateSubnetB:
     Type: AWS::EC2::Subnet
     Properties:
       AvailabilityZone: !Select
@@ -80,7 +89,7 @@ Resources:
       VpcId: !Ref 'VPC'
       CidrBlock: !FindInMap ['SubnetConfig', 'PrivateTwo', 'CIDR']
 
-
+  # Gateway
   InternetGateway:
     Type: AWS::EC2::InternetGateway
   GatewayAttachement:
@@ -88,6 +97,8 @@ Resources:
     Properties:
       VpcId: !Ref VPC
       InternetGatewayId: !Ref InternetGateway
+
+  # Route tables with associations
   PublicRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
@@ -99,71 +110,70 @@ Resources:
       RouteTableId: !Ref PublicRouteTable
       DestinationCidrBlock: 0.0.0.0/0
       GatewayId: !Ref InternetGateway
-  PublicSubnetOneRouteTableAssociation:
+  PublicSubnetARouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      SubnetId: !Ref PublicSubnetOne
+      SubnetId: !Ref PublicSubnetA
       RouteTableId: !Ref PublicRouteTable
-  PublicSubnetTwoRouteTableAssociation:
+  PublicSubnetBRouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      SubnetId: !Ref PublicSubnetTwo
+      SubnetId: !Ref PublicSubnetB
       RouteTableId: !Ref PublicRouteTable
-
-  NatGatewayOneAttachment:
-    Type: AWS::EC2::EIP
-    DependsOn: GatewayAttachement
-    Properties:
-      Domain: vpc
-  NatGatewayTwoAttachment:
-    Type: AWS::EC2::EIP
-    DependsOn: GatewayAttachement
-    Properties:
-      Domain: vpc
-  NatGatewayOne:
-    Type: AWS::EC2::NatGateway
-    Properties:
-      AllocationId: !GetAtt NatGatewayOneAttachment.AllocationId
-      SubnetId: !Ref PublicSubnetOne
-  NatGatewayTwo:
-    Type: AWS::EC2::NatGateway
-    Properties:
-      AllocationId: !GetAtt NatGatewayTwoAttachment.AllocationId
-      SubnetId: !Ref PublicSubnetTwo
-  PrivateRouteTableOne:
+  PrivateRouteTableA:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId: !Ref VPC
-  PrivateRouteOne:
+  PrivateRouteA:
     Type: AWS::EC2::Route
     Properties:
-      RouteTableId: !Ref PrivateRouteTableOne
+      RouteTableId: !Ref PrivateRouteTableA
       DestinationCidrBlock: 0.0.0.0/0
-      NatGatewayId: !Ref NatGatewayOne
-  PrivateRouteTableOneAssociation:
+      NatGatewayId: !Ref NatGatewayA
+  PrivateRouteTableAAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      RouteTableId: !Ref PrivateRouteTableOne
-      SubnetId: !Ref PrivateSubnetOne
-  PrivateRouteTableTwo:
+      RouteTableId: !Ref PrivateRouteTableA
+      SubnetId: !Ref PrivateSubnetA
+  PrivateRouteTableB:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId: !Ref VPC
   PrivateRouteTwo:
     Type: AWS::EC2::Route
     Properties:
-      RouteTableId: !Ref PrivateRouteTableTwo
+      RouteTableId: !Ref PrivateRouteTableB
       DestinationCidrBlock: 0.0.0.0/0
-      NatGatewayId: !Ref NatGatewayTwo
-  PrivateRouteTableTwoAssociation:
+      NatGatewayId: !Ref NatGatewayB
+  PrivateRouteTableBAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      RouteTableId: !Ref PrivateRouteTableTwo
-      SubnetId: !Ref PrivateSubnetTwo
+      RouteTableId: !Ref PrivateRouteTableB
+      SubnetId: !Ref PrivateSubnetB
 
-  ####
-  # ALB related resources
-  ####
+  # NAT gateways with attachments
+  NatGatewayA:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatGatewayAAttachment.AllocationId
+      SubnetId: !Ref PublicSubnetA
+  NatGatewayB:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatGatewayBAttachment.AllocationId
+      SubnetId: !Ref PublicSubnetB
+  NatGatewayAAttachment:
+    Type: AWS::EC2::EIP
+    DependsOn: GatewayAttachement
+    Properties:
+      Domain: vpc
+  NatGatewayBAttachment:
+    Type: AWS::EC2::EIP
+    DependsOn: GatewayAttachement
+    Properties:
+      Domain: vpc
+
+  # Security groups
   PublicLoadBalancerSG:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -172,6 +182,28 @@ Resources:
       SecurityGroupIngress:
         - CidrIp: 0.0.0.0/0
           IpProtocol: -1
+  ContainerSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Access to the containers
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 0
+          ToPort: 65535
+          SourceSecurityGroupId: !Ref PublicLoadBalancerSG
+  DatabaseSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: Allow access to RDS SQL Server
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref ContainerSG
+
+  # Load balancer
   PublicLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
@@ -180,8 +212,8 @@ Resources:
         - Key: idle_timeout.timeout_seconds
           Value: '30'
       Subnets:
-        - !Ref PublicSubnetOne
-        - !Ref PublicSubnetTwo
+        - !Ref PublicSubnetA
+        - !Ref PublicSubnetB
       SecurityGroups:
         - !Ref PublicLoadBalancerSG
   # A dummy target group is used to setup the ALB to just drop traffic
@@ -195,7 +227,6 @@ Resources:
       Protocol: HTTP
       VpcId: !Ref VPC
       TargetType: ip
-
   PublicLoadBalancerListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
@@ -205,33 +236,50 @@ Resources:
       LoadBalancerArn: !Ref PublicLoadBalancer
       Port: 80
       Protocol: HTTP
-  ####
-  # ECS related resources
-  ####
+
+  # ECS and ECR
   ECSCluster:
     Type: AWS::ECS::Cluster
     Properties:
       ClusterName: enhanced-architecture-fargate
-  ContainerSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
+  AppRepository:
+    Type: AWS::ECR::Repository
     Properties:
-      GroupDescription: Access to the containers
-      VpcId: !Ref VPC
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 0
-          ToPort: 65535
-          SourceSecurityGroupId: !Ref PublicLoadBalancerSG
-  # Task Definition for ToDoList
-  ToDoTaskTaskDefinition:
+      RepositoryName: todolist
+  AppService:
+    Type: AWS::ECS::Service
+    DependsOn:
+      - AppTaskTaskDefinition
+      - PublicLoadBalancerListener
+      - DBInstance
+      - DBConnection
+    Properties:
+      Cluster: !Ref ECSCluster
+      DesiredCount: 2
+      LaunchType: FARGATE
+      TaskDefinition: !Ref AppTaskTaskDefinition
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          Subnets:
+            - !Ref PrivateSubnetA
+            - !Ref PrivateSubnetB
+          SecurityGroups:
+            - !Ref ContainerSG
+      LoadBalancers:
+        - TargetGroupArn: !Ref DummyTargetGroupPublic
+          ContainerName: todolist
+          ContainerPort: 80
+  # Task
+  AppTaskTaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
       Family: todolist-task
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
-      ExecutionRoleArn: !Ref TaskExecutionRoleArn
-      TaskRoleArn: !Ref TaskExecutionRoleArn
+      ExecutionRoleArn: !Ref IAMRole
+      TaskRoleArn: !Ref IAMRole
       Cpu: 256
       Memory: 512
       ContainerDefinitions:
@@ -255,43 +303,7 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: todolist
 
-  # Log Group for Backend
-  CloudWatchGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: /ecs/todolist
-      
-  # ECS Service for ToDoList
-  ToDoListRepository:
-    Type: AWS::ECR::Repository
-    Properties:
-      RepositoryName: todolist
-  ToDoListService:
-    Type: AWS::ECS::Service
-    DependsOn:
-      - ToDoTaskTaskDefinition
-      - PublicLoadBalancerListener
-      - DBInstance
-      - DBConnection
-    Properties:
-      Cluster: !Ref ECSCluster
-      DesiredCount: 2
-      LaunchType: FARGATE
-      TaskDefinition: !Ref ToDoTaskTaskDefinition
-      NetworkConfiguration:
-        AwsvpcConfiguration:
-          AssignPublicIp: ENABLED
-          Subnets:
-            - !Ref PrivateSubnetOne
-            - !Ref PrivateSubnetTwo
-          SecurityGroups:
-            - !Ref ContainerSecurityGroup
-      LoadBalancers:
-        - TargetGroupArn: !Ref DummyTargetGroupPublic
-          ContainerName: todolist
-          ContainerPort: 80
-
-  # RDS SqlServer Instance
+  # Database - RDS SqlServer Instance
   DBInstance:
     Type: AWS::RDS::DBInstance
     Properties:
@@ -303,20 +315,9 @@ Resources:
       AllocatedStorage: !Ref DBAllocatedStorage
       MultiAZ: true
       VPCSecurityGroups:
-        - !Ref DBSecurityGroup
+        - !Ref DatabaseSG
       DBSubnetGroupName: !Ref DBSubnetGroup
-
-  # Security Group for RDS
-  DBSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      VpcId: !Ref VPC
-      GroupDescription: Allow access to RDS SQL Server
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 5432
-          ToPort: 5432
-          SourceSecurityGroupId: !Ref ContainerSecurityGroup
+      DBInstanceIdentifier: my-db-instance
 
   # Subnet Group for RDS
   DBSubnetGroup:
@@ -324,8 +325,8 @@ Resources:
     Properties:
       DBSubnetGroupDescription: Subnets for RDS instance
       SubnetIds:
-        - !Ref PrivateSubnetOne
-        - !Ref PrivateSubnetTwo
+        - !Ref PrivateSubnetA
+        - !Ref PrivateSubnetB
 
   # Store DB Username in Parameter Store
   DBUsernameParameter:
@@ -351,23 +352,74 @@ Resources:
       Type: String
       Value: !Sub "Server=${DBInstance.Endpoint.Address};Port=5432;Database=todolist;User Id=${DBUsername};Password=${DBPassword};"
 
-######################################
+  # Log Group for Backend
+  CloudWatchGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/todolist
+
+  # SNS Topic for CloudWatch Alarms
+  AlarmTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: "AlarmDatabaseConnections"
+      Subscription:
+        - Endpoint: "sebaprokoppp@gmail.com"
+          Protocol: "email"
+
+  # CloudWatch Alarm
+  AlarmDatabaseConnections:
+    Type: AWS::CloudWatch::Alarm
+    Properties: 
+      AlarmDescription: "opis pozaru"
+      Namespace: "AWS/RDS"
+      MetricName: "DatabaseConnections"
+      Dimensions:
+        - Name: "DBInstanceIdentifier"
+          Value: "my-db-instance"
+      Statistic: "Average"
+      Period: 10  # seconds
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: "GreaterThanThreshold"
+      AlarmActions:
+        - !Ref AlarmTopic
+      InsufficientDataActions: []
+      OKActions: []
+
+  # EventBridge Rule
+  AlarmStateChangeRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: "Rule to respond to CloudWatch Alarm state changes"
+      EventPattern:
+        source:
+          - "aws.cloudwatch"
+        detail-type:
+          - "CloudWatch Alarm State Change"
+        resources:
+          - !GetAtt AlarmDatabaseConnections.Arn
+      State: "ENABLED"
+      Targets:
+        - Arn: !Ref AlarmTopic
+          Id: "SendToSNS"
+
 Outputs:
   VpcId:
     Description: The ID of the VPC that this stack is deployed in
     Value: !Ref VPC
-  PublicSubnetOne:
-    Description: Public subnet one
-    Value: !Ref PublicSubnetOne
-  PublicSubnetTwo:
-    Description: Public subnet two
-    Value: !Ref PublicSubnetTwo
-  PrivateSubnetOne:
+  PublicSubnetA:
+    Description: Public subnet A
+    Value: !Ref PublicSubnetA
+  PublicSubnetB:
+    Description: Public subnet B
+    Value: !Ref PublicSubnetB
+  PrivateSubnetA:
     Description: Private subnet one
-    Value: !Ref PrivateSubnetOne
-  PrivateSubnetTwo:
+    Value: !Ref PrivateSubnetA
+  PrivateSubnetB:
     Description: Private subnet two
-    Value: !Ref PrivateSubnetTwo
+    Value: !Ref PrivateSubnetB
   ExternalUrl:
     Description: The url of the external load balancer
     Value: !Sub http://${PublicLoadBalancer.DNSName}
